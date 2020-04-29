@@ -9,6 +9,7 @@
 *.c
 *egg-info*
 dist
+venv
 
 *.aux
 *.lof
