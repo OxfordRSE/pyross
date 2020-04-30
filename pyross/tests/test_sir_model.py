@@ -93,7 +93,7 @@ def test_sir_model():
     Ia0 = np.ones(M)
     Is0 = np.ones(M)
     R0  = np.zeros(M)
-    S0  = N - (Ia0 + Is0 + R0)
+    S0  = np.ones(M) * Ni - (Ia0 + Is0 - R0)
 
     # No contact structure
     def contactMatrix(t):
@@ -106,34 +106,47 @@ def test_sir_model():
     # Instantiate model
     beta = 0.2
     gI = 0.1
-    parameters = {'alpha': 0, 'beta': beta, 'gIa': gI, 'gIs': gI, 'fsa': 0.5}
+    fsa = 1   # No self-isolation: C in isolation = fsa * C normal
+    parameters = {'alpha': 0.5, 'beta': beta, 'gIa': gI, 'gIs': gI, 'fsa': 1}
     model = pyross.deterministic.SIR(parameters, M, Ni)
 
     # Simulate
     data = model.simulate(S0, Ia0, Is0, contactMatrix, Tf, Nt)
 
     # Extract data from dict
-    S  = data['X'][:, 0]
-    Ia = data['X'][:, 1]
-    Is = data['X'][:, 2]
+    X = data['X']
+    S = np.sum(X[:, 0:M], axis=1)
+    I = np.sum(X[:, M:3 * M], axis=1)
+    R = N - S - I
     t = data['t']
 
     # Test against simple version
     test_data = simulate_simple_sir([N - 2 * M, 2 * M, 0], beta, gI, t)
 
     # Compare graphically, for debugging
+    if False:
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(10, 8))
 
-
+        plt.fill_between(t, 0, S, color="#348ABD", alpha=0.3)
+        plt.plot(t, S, '-', color="#348ABD", label='$S$', lw=4)
+        plt.fill_between(t, 0, I, color='#A60628', alpha=0.3)
+        plt.plot(t, I, '-', color='#A60628', label='$I$', lw=4)
+        plt.fill_between(t, 0, R, color="dimgrey", alpha=0.3)
+        plt.plot(t, R, '-', color="dimgrey", label='$R$', lw=4)
+        plt.plot(t, test_data[:, 0], 'k--')
+        plt.plot(t, test_data[:, 1], 'k--')
+        plt.plot(t, test_data[:, 2], 'k--')
+        plt.legend()
+        plt.grid()
+        plt.autoscale(enable=True, axis='x', tight=True)
+        plt.show()
 
     # Compare numerically
     S_ref = test_data[:, 0]
     np.testing.assert_allclose(S, S_ref, rtol=1e-6)
-
     I_ref = test_data[:, 1]
-    np.testing.assert_allclose(Is, I_ref, rtol=1e-6)
-
-    # No asymptomatic cases
-    np.testing.assert_allclose(Ia, 0 * I_ref)
+    np.testing.assert_allclose(I, I_ref, rtol=1e-6)
 
 
 
