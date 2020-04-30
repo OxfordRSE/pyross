@@ -1,4 +1,5 @@
 *.pyc
+*.pyd
 *.so
 *.ipynb_checkpoints
 *~
@@ -77,3 +78,6 @@ build/
 *.pvd
 build/ 
 .DS_Store
+
+# Virtual environments
+venv
